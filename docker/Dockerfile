@@ -17,9 +17,9 @@
 # License along with iotagent-lora. If not, see http://www.gnu.org/licenses/.
 #
 
-ARG NODE_VERSION=8.16.1-slim
+ARG NODE_VERSION=14-slim
 FROM node:${NODE_VERSION}
-ARG GITHUB_ACCOUNT=Atos-Research-and-Innovation
+ARG GITHUB_ACCOUNT=suecom
 ARG GITHUB_REPOSITORY=IoTagent-LoRaWAN
 ARG DOWNLOAD=latest
 ARG SOURCE_BRANCH=master
@@ -71,6 +71,7 @@ RUN if [ "${DOWNLOAD}" = "latest" ] ; \
 	# Ensure that unzip is installed, and download the sources
 	apt-get update && \
 	apt-get install -y  --no-install-recommends unzip && \
+	apt-get install -y  --no-install-recommends wget && \
 	wget --no-check-certificate -O source.zip https://github.com/"${GITHUB_ACCOUNT}"/"${GITHUB_REPOSITORY}"/archive/"${RELEASE}".zip && \
 	unzip source.zip && \
 	rm source.zip && \
@@ -78,6 +79,7 @@ RUN if [ "${DOWNLOAD}" = "latest" ] ; \
 	# Remove unzip and clean apt cache
 	apt-get clean && \
 	apt-get remove -y unzip && \
+	apt-get remove -y wget && \
 	apt-get -y autoremove
 
 WORKDIR /opt/iotagent-lora

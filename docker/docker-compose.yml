@@ -1,7 +1,7 @@
-version: '2'
+version: "2"
 
 volumes:
-  mongo_data:
+  ? mongo_data
 
 services:
 
@@ -9,11 +9,13 @@ services:
     expose:
       - "27017"
     hostname: mongodb
-    image: mongo:3.2
+    image: mongo:4.4
     stdin_open: true
     tty: true
     volumes:
       - mongo_data:/data/db
+    ports:
+      - "27017:27017"
 
   orion:
     command:  -dbhost mongodb -port 1026 -logLevel DEBUG
@@ -34,8 +36,8 @@ services:
       - orion
     entrypoint: bin/iotagent-lora docker/config-docker.js
     hostname: iotagent-lora
-    image: ioeari/iotagent-lora
+    image: iot-agent
     ports:
-      - "4061:4061"
+      - "4061:4041"
     stdin_open: true
     tty: true
