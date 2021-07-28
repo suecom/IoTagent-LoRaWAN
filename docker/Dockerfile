@@ -58,13 +58,16 @@ MAINTAINER FIWARE IoTAgent Team. Atos Spain S.A
 RUN if [ "${DOWNLOAD}" = "latest" ] ; \
 	then \
 		RELEASE="${SOURCE_BRANCH}"; \
+		V=""; \
 		echo "INFO: Building Latest Development from ${SOURCE_BRANCH} branch."; \
 	elif [ "${DOWNLOAD}" = "stable" ]; \
 	then \
 		RELEASE=$(curl -s https://api.github.com/repos/"${GITHUB_ACCOUNT}"/"${GITHUB_REPOSITORY}"/releases/latest | grep 'tag_name' | cut -d\" -f4); \
+		V=""; \
 		echo "INFO: Building Latest Stable Release: ${RELEASE}"; \
 	else \
 	 	RELEASE="${DOWNLOAD}"; \
+		V="v"; \
 	 	echo "INFO: Building Release: ${RELEASE}"; \
 	fi && \
 	RELEASE_CONCAT=$(echo "${RELEASE}" | tr / -); \
@@ -72,7 +75,7 @@ RUN if [ "${DOWNLOAD}" = "latest" ] ; \
 	apt-get update && \
 	apt-get install -y  --no-install-recommends unzip && \
 	apt-get install -y  --no-install-recommends wget && \
-	wget --no-check-certificate -O source.zip https://github.com/"${GITHUB_ACCOUNT}"/"${GITHUB_REPOSITORY}"/archive/"${RELEASE}".zip && \
+	wget --no-check-certificate -O source.zip https://github.com/"${GITHUB_ACCOUNT}"/"${GITHUB_REPOSITORY}"/archive/"${V}""${RELEASE}".zip && \
 	unzip source.zip && \
 	rm source.zip && \
 	mv "${GITHUB_REPOSITORY}-${RELEASE_CONCAT}" /opt/iotagent-lora && \
