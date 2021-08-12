@@ -19,13 +19,52 @@ services:
     hostname: orion
     container_name: fiware-orion
     image: fiware/orion:latest
-    command: -dbhost mongodb -port 1026 -logLevel DEBUG
+    command: -corsOrigin __ALL -dbhost mongodb -port 1026 -logLevel DEBUG
     depends_on:
       - mongodb
     expose:
       - "1026"
     ports:
       - "1026:1026"
+    environment:
+      - ORION_CORS_ALLOWED_ORIGIN=__ALL
+
+  cygnus:
+    hostname: cygnus
+    container_name: fiware-cygnus
+    image: fiware/cygnus-ngsi:latest
+    depends_on:
+      - mongodb
+    networks:
+      - default
+    expose:
+      - "5080"
+    ports:
+      - "5051:5051"
+      - "5080:5080"
+    environment:
+      - "CYGNUS_MONGO_HOSTS=mongodb:27017"
+      - "CYGNUS_MONGO_SERVICE_PORT=5051"
+      - "CYGNUS_LOG_LEVEL=DEBUG"
+      - "CYGNUS_API_PORT=5080"
+      - "CYGNUS_SERVICE_PORT=5051"
+
+  sth-comet:
+    hostname: sth-comet
+    container_name: fiware-sth-comet
+    image: fiware/sth-comet
+    depends_on:
+      - mongodb
+    networks:
+      - default
+    ports:
+      - "8666:8666"
+    environment:
+      - STH_HOST=0.0.0.0
+      - STH_PORT=8666
+      - DB_PREFIX=sth_
+      - DB_URI=mongodb:27017
+      - LOGOPS_LEVEL=DEBUG
 
   iotagent-lora:
     hostname: iotagent-lora
