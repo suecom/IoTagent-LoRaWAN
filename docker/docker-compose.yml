@@ -2,18 +2,56 @@ version: "3.5"
 
 volumes:
   ? mongo_data
+  ? mysql-db
 
 services:
+  # server address: smtp.gmail.com
+  # username: Your Gmail address (for example, example@gmail.com)
+  # password: Your Gmail password
+  # port (TLS): 587
+  # port (SSL): 465
+  # TLS/SSL required: Yes
+
+  mailer:
+    restart: always
+    image: mazdermind/docker-mail-relay
+    hostname: mailer
+    container_name: mailer
+    ports:
+      - "25:25"
+    environment:
+      - SMTP_LOGIN=allister
+      - SMTP_PASSWORD=Winchester2012*
+      - EXT_RELAY_HOST=mail.amannion.com
+      - EXT_RELAY_PORT=587
+      - ACCEPTED_NETWORKS=0.0.0.0/32
+      - USE_TLS=yes
+
+  mysql-db:
+    restart: always
+    hostname: mysql-db
+    container_name: db-mysql
+    image: mysql:5.7
+    expose:
+      - "3306"
+    ports:
+      - "3306:3306"
+    environment:
+      - "MYSQL_ROOT_PASSWORD=gorrocks"
+      - "MYSQL_ROOT_HOST=0.0.0.0"
+    volumes:
+      - mysql-db:/var/lib/mysql
+
   mongodb:
     hostname: mongodb
     container_name: mongodb-backpedal
     image: mongo:4.4
-    volumes:
-      - mongo_data:/data/db
     expose:
       - "27017"
     ports:
       - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
 
   orion:
     hostname: orion
@@ -66,6 +104,28 @@ services:
       - DB_URI=mongodb:27017
       - LOGOPS_LEVEL=DEBUG
 
+  keyrock:
+    hostname: keyrock
+    container_name: fiware-keyrock
+    image: fiware/idm:8.1.0
+    depends_on:
+      - mysql-db
+    ports:
+      - "3080:3080"
+      - "3443:3443"
+    environment:
+      - DEBUG=idm:*
+      - IDM_DB_HOST=mysql-db
+      - IDM_HOST=http://localhost:3080
+      - IDM_PORT=3080
+      - IDM_DB_PASS=gorrocks
+      - IDM_DB_USER=root
+      - IDM_ADMIN_USER=admin
+      - IDM_ADMIN_EMAIL=admin@test.com
+      - IDM_ADMIN_PASS=1234
+      - IDM_EMAIL_HOST=mailer
+      - IDM_EMAIL_PORT=25
+
   iotagent-lora:
     hostname: iotagent-lora
     container_name: iotagent-ttn
@@ -76,3 +136,52 @@ services:
     entrypoint: bin/iotagent-lora docker/config-docker.js
     ports:
       - "4061:4041"
+
+  ngsi-proxy:
+    hostname: ngsi-proxy
+    container_name: ngsi-proxy
+    image: fiware/ngsiproxy:latest
+    ports:
+      - "4000:4000"
+    expose:
+      - "4000"
+    environment:
+      - PORT=4000
+      - TRUST_PROXY_HEADERS=0
+
+  orion-proxy:
+    hostname: orion-proxy
+    container_name: fiware-proxy
+    image: fiware/pep-proxy:latest
+    ports:
+      - "80:80"
+    expose:
+      - "80"
+    environment:
+      - DEBUG=pep-proxy:*
+      - PEP_PROXY_DEBUG=true
+      - PEP_PROXY_APP_HOST=fiware-orion
+      - PEP_PROXY_APP_PORT=1026
+      - PEP_PROXY_PORT=80
+      - PEP_PROXY_IDM_HOST=fiware-keyrock
+      - PEP_PROXY_IDM_PORT=3080
+      - PEP_PROXY_HTTPS_ENABLED=false
+      - PEP_PROXY_AUTH_ENABLED=false
+      - PEP_PROXY_IDM_SSL_ENABLED=false
+      - PEP_PROXY_APP_ID=990d4df1-835d-445f-91ee-35052dc6c4ef
+      - PEP_PROXY_USERNAME=pep_proxy_6b59d337-c7e6-473d-bcf5-147babd38c64
+      - PEP_PASSWORD=pep_proxy_f8fa2d46-59d4-4911-ba90-1a697e93bccd
+      - PEP_PROXY_PDP=idm
+      - PEP_PROXY_MAGIC_KEY=1234
+      - PEP_PROXY_PUBLIC_PATHS=/version
+
+  websocket-proxy:
+    hostname: websocket-proxy
+    container_name: websocket-proxy
+    image: websocket-proxy:latest
+
+    ports:
+      - "6000:6000"
+
+    expose:
+      - "6000"
